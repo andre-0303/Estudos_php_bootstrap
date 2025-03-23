@@ -1,0 +1,12 @@
+html, body {
+    height: 100%;
+}
+.form-container{
+    max-width: 350px;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    flex-wrap: wrap;
+}   
