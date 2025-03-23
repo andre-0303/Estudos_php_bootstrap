@@ -6,3 +6,5 @@
   <li>Como estilizar melhor sites usando frameworks.</li>
   <li>Fazer conexão com banco de dados.</li>
 </ul>
+<h3>Lembrando:</h3>
+<p>Para poder utilizar é necessário saber usar o xampp e tbm de suas particularidades.</p>
