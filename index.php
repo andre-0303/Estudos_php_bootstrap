@@ -1,69 +1,130 @@
 <?php
-    include 'conexao.php';
+// --------- CONEXÃO ----------
+include 'conexao.php';
 
-    $tarefas = [];
+// Sempre comece com array vazio
+$tarefas = [];
 
-    if($_SERVER['REQUEST_METHOD'] == 'POST'){
-        $tarefa = $_POST["tarefa"];
+// --------- INSERÇÃO ----------
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $tarefa = trim($_POST['tarefa'] ?? '');
 
-        $stmt = $conn->prepare("INSERT INTO todolist (tarefa) values(?)");
+    if ($tarefa !== '') {
+        $stmt = $conn->prepare('INSERT INTO todolist (tarefa) VALUES (?)');
         $stmt->execute([$tarefa]);
-        header("location: index.php");
-        exit;
     }
-    $stmt = $conn->query("SELECT * FROM todolist");
-    $tarefas = $stmt->fetchAll();
+    header('Location: index.php');   // evita reenvio
+    exit;
+}
+
+// --------- LISTAGEM ----------
+$stmt = $conn->query('SELECT * FROM todolist ORDER BY concluida, id');
+if ($stmt) {
+    $tarefas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>todoList</title>
-    <link rel="stylesheet" href="styles.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lembrete de Tarefas</title>
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Ícones -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+  <style>
+    :root{
+      --bs-body-bg:#f5f7fb;
+      --bs-primary:#675cff;
+    }
+    body{min-height:100vh;display:flex;align-items:center;justify-content:center;}
+    .card-shadow{box-shadow:0 0.5rem 1rem rgba(0,0,0,.15);}
+    .table td,.table th{vertical-align:middle;}
+  </style>
 </head>
-<body class="d-flex align-items-center py-4 bg-body-tertiary">
-    <main class="w-100 m-auto form-container">
-    <form method="POST" action="index.php">
-    <h1 class="h1 mb-3 fw-normal">Lembrete de tarefas</h1>
-    <div class="form-floating">
-        <div class="form-floating"></div>    
-        <input type="text" id="tarefa" name="tarefa" required class="form-control">
-        <label for="tarefa">Tarefa</label>
+<body>
+  <div class="container-sm">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+
+        <!-- Formulário -->
+        <div class="card card-shadow mb-4">
+          <div class="card-body">
+            <h1 class="h4 text-center mb-4">📝 Lembrete de Tarefas</h1>
+            <form method="POST" class="row g-3">
+              <div class="col-12 col-md-9">
+                <label for="tarefa" class="visually-hidden">Tarefa</label>
+                <input type="text" class="form-control form-control-lg"
+                       id="tarefa" name="tarefa"
+                       placeholder="Descreva a nova tarefa…" maxlength="120" required>
+              </div>
+              <div class="col-12 col-md-3 d-grid">
+                <button type="submit" class="btn btn-primary btn-lg">
+                  <i class="bi bi-plus-circle"></i> Adicionar
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-        <button type="submit" class="btn btn-primary w100 py-2">Listar tarefa</button>
-    </form>
-    </div>
-    <?php if(count($tarefas) > 0) : ?>
-        <h2>Lista de tarefas</h2>
-        <table class="table table-striped table-bordered">
-            <thead>
+
+        <!-- Lista -->
+        <?php if (count($tarefas) > 0): ?>
+        <div class="card card-shadow">
+          <div class="card-header bg-primary text-white">
+            <strong><i class="bi bi-card-checklist me-2"></i>Lista de Tarefas</strong>
+          </div>
+          <div class="table-responsive">
+            <table class="table align-middle mb-0">
+              <thead class="table-light">
                 <tr>
-                    <th scope="col"></th>
-                    <th scope="col">ID</th>
-                    <th scope="col">TAFERA</th>
-                    <th scope = "col">AÇÕES</th>
+                  <th>ID</th>
+                  <th>Tarefa</th>
+                  <th class="text-end">Ações</th>
                 </tr>
-            </thead>
-            <tbody class="table-group-divider">
-                <?php foreach($tarefas as $tarefa) : ?>
-                    <tr>
-                        <th scope="row">
-                        <td><?php echo $tarefa['id']; ?></td>
-                        <td><?php echo $tarefa['tarefa']; ?></td>
-                        <td>
-                        <a href="editar.php?id=<?php echo $tarefa['id']; ?>" id="editar" class="btn btn-danger">Editar</a>
-                        <a href="excluir.php?id=<?php echo $tarefa['id']; ?>" id="excluir" class="btn btn-warning">Concluir</a>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-            </tbody>
-        </table>
+              </thead>
+              <tbody>
+                <?php foreach ($tarefas as $t): ?>
+                <tr class="<?= $t['concluida'] ? 'table-success text-decoration-line-through' : '' ?>">
+                  <td class="fw-semibold"><?= $t['id']; ?></td>
+                  <td><?= htmlspecialchars($t['tarefa']); ?></td>
+                  <td class="text-end">
+                    <a href="editar.php?id=<?= $t['id']; ?>" class="btn btn-sm btn-outline-secondary me-1">
+                      <i class="bi bi-pencil-square"></i>
+                    </a>
+
+                    <?php if (!$t['concluida']): ?>
+                      <a href="concluir.php?id=<?= $t['id']; ?>"
+                         class="btn btn-sm btn-outline-success me-1"
+                         onclick="return confirm('Marcar como concluída?');">
+                         <i class="bi bi-check2-circle"></i>
+                      </a>
+                    <?php endif; ?>
+
+                    <a href="excluir.php?id=<?= $t['id']; ?>"
+                       class="btn btn-sm btn-outline-danger"
+                       onclick="return confirm('Excluir definitivamente?');">
+                       <i class="bi bi-trash3"></i>
+                    </a>
+                  </td>
+                </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
+        </div>
         <?php else: ?>
-            <p>Não possui tarefas cadastradas</p>
+          <div class="alert alert-info text-center card-shadow">
+            Você ainda não adicionou nenhuma tarefa.
+          </div>
         <?php endif; ?>
-        </main>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
